@@ -23,17 +23,12 @@ namespace MvcMusicStore.Controllers
         public async Task<ActionResult> Index()
         {
             List<Album> albums = new List<Album>();
-            try
-            {
-                albums.AddRange(await _storeContext.Albums
-                    .OrderByDescending(a => a.OrderDetails.Count())
-                    .Take(6)
-                    .ToListAsync());
-            }
-            catch (Exception e)
-            {
-                logger.Error(e.Message);
-            }
+
+            albums.AddRange(await _storeContext.Albums
+                .OrderByDescending(a => a.OrderDetails.Count())
+                .Take(6)
+                .ToListAsync());
+
 
             return View(albums);
         }

@@ -80,29 +80,24 @@ namespace MvcMusicStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
-            try
+            logger.Debug("Entered into Login controller");
+
+            if (ModelState.IsValid)
             {
-                if (ModelState.IsValid)
+                var user = await _userManager.FindAsync(model.UserName, model.Password);
+                if (user != null)
                 {
-                    var user = await _userManager.FindAsync(model.UserName, model.Password);
-                    if (user != null)
-                    {
-                        await SignInAsync(user, model.RememberMe);
+                    await SignInAsync(user, model.RememberMe);
 
-                        logger.Info($"User {model.UserName} has sucessfully log in");
-                        // counterHelper.Increment(Counters.LogIn);
+                    logger.Info($"User {model.UserName} has sucessfully logged in");
+                    // counterHelper.Increment(Counters.LogIn);
 
-                        return RedirectToLocal(returnUrl);
-                    }
-                    // counterHelper.Increment(Counters.FailedLogIn);
-                    logger.Info($"Invalid username or password while logging in");
-
-                    ModelState.AddModelError("", "Invalid username or password.");
+                    return RedirectToLocal(returnUrl);
                 }
-            }
-            catch (Exception e)
-            {
-                logger.Error(e.Message);
+                // counterHelper.Increment(Counters.FailedLogIn);
+                logger.Info($"Invalid username or password while logging in");
+
+                ModelState.AddModelError("", "Invalid username or password.");
             }
 
             return View(model);
@@ -121,27 +116,21 @@ namespace MvcMusicStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Register(RegisterViewModel model)
         {
-            try
+            logger.Debug("Entered into register controller");
+
+            if (ModelState.IsValid)
             {
-                if (ModelState.IsValid)
+                var user = new ApplicationUser { UserName = model.UserName };
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
                 {
-                    var user = new ApplicationUser {UserName = model.UserName};
-                    var result = await _userManager.CreateAsync(user, model.Password);
-                    if (result.Succeeded)
-                    {
-                        await SignInAsync(user, false);
+                    await SignInAsync(user, false);
 
-                        logger.Info($"User with user name { model.UserName} has been successfully registered");
+                    logger.Info($"User with user name { model.UserName} has been successfully registered");
 
-                        return RedirectToAction("Index", "Home");
-                    }
-                    logger.Info("Model is not valid in registration form");
-                    AddErrors(result);
+                    return RedirectToAction("Index", "Home");
                 }
-            }
-            catch (Exception e)
-            {
-                logger.Error(e.Message);
+                AddErrors(result);
             }
 
             return View(model);
@@ -194,6 +183,8 @@ namespace MvcMusicStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Manage(ManageUserViewModel model)
         {
+            logger.Debug("Entered into manage controller");
+
             bool hasPassword = await HasPasswordAsync();
             ViewBag.HasLocalPassword = hasPassword;
             ViewBag.ReturnUrl = Url.Action("Manage");
@@ -209,9 +200,9 @@ namespace MvcMusicStore.Controllers
 
                     if (result.Succeeded)
                     {
+                        logger.Info("The password has been successfully changed");
                         return RedirectToAction("Manage", new { Message = ManageMessageId.ChangePasswordSuccess });
                     }
-
                     AddErrors(result);
                 }
             }
@@ -231,6 +222,7 @@ namespace MvcMusicStore.Controllers
 
                     if (result.Succeeded)
                     {
+                        logger.Debug("New password has been created");
                         return RedirectToAction("Manage", new { Message = ManageMessageId.SetPasswordSuccess });
                     }
 
@@ -393,6 +385,7 @@ namespace MvcMusicStore.Controllers
         private async Task SignInAsync(ApplicationUser user, bool isPersistent)
         {
             logger.Debug("Entered into SignInAsync method");
+
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ExternalCookie);
 
             var identity =
@@ -407,6 +400,7 @@ namespace MvcMusicStore.Controllers
         {
             foreach (var error in result.Errors)
             {
+                logger.Error(error);
                 ModelState.AddModelError("", error);
             }
         }
@@ -420,6 +414,7 @@ namespace MvcMusicStore.Controllers
 
         private async Task<bool> HasPasswordAsync()
         {
+            logger.Debug("Entered to HasPasswordAsync method");
             var user = await _userManager.FindByIdAsync(User.Identity.GetUserId());
 
             return user != null && user.PasswordHash != null;
