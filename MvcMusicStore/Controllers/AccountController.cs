@@ -6,8 +6,8 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin.Security;
 using MvcMusicStore.Infrastracture;
+using MvcMusicStore.Infrastracture.Logger;
 using MvcMusicStore.Models;
-using NLog;
 using PerformanceCounterHelper;
 
 namespace MvcMusicStore.Controllers
@@ -15,13 +15,13 @@ namespace MvcMusicStore.Controllers
     [Authorize]
     public class AccountController : Controller
     {
-       // static CounterHelper<Counters> counterHelper;
+        static CounterHelper<Counters> counterHelper;
         private readonly ILogger logger;
 
-        //static AccountController()
-        //{
-            //counterHelper = PerformanceHelper.CreateCounterHelper<Counters>("Test project");
-        //}
+        static AccountController()
+        {
+            counterHelper = PerformanceHelper.CreateCounterHelper<Counters>("Test project");
+        }
 
         public enum ManageMessageId
         {
@@ -90,11 +90,11 @@ namespace MvcMusicStore.Controllers
                     await SignInAsync(user, model.RememberMe);
 
                     logger.Info($"User {model.UserName} has sucessfully logged in");
-                    // counterHelper.Increment(Counters.LogIn);
+                    counterHelper.Increment(Counters.LogIn);
 
                     return RedirectToLocal(returnUrl);
                 }
-                // counterHelper.Increment(Counters.FailedLogIn);
+                counterHelper.Increment(Counters.FailedLogIn);
                 logger.Info($"Invalid username or password while logging in");
 
                 ModelState.AddModelError("", "Invalid username or password.");
@@ -349,7 +349,7 @@ namespace MvcMusicStore.Controllers
 
             logger.Info($"Log out occured");
 
-            //  counterHelper.Increment(Counters.LogOff);
+            counterHelper.Increment(Counters.LogOff);
 
             return RedirectToAction("Index", "Home");
         }

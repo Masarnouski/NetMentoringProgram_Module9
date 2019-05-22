@@ -4,8 +4,8 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using MvcMusicStore.Infrastracture.Logger;
 using MvcMusicStore.Models;
-using NLog;
 
 namespace MvcMusicStore.Controllers
 {

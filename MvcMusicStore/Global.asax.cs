@@ -9,45 +9,42 @@ using Autofac;
 using Autofac.Integration.Mvc;
 using MvcMusicStore.Controllers;
 using MvcMusicStore.Infrastracture;
-using NLog;
+using MvcMusicStore.Infrastracture.Logger;
 using PerformanceCounterHelper;
 
 namespace MvcMusicStore
 {
     public class MvcApplication : System.Web.HttpApplication
     {
-        private readonly ILogger logger;
-
-        public MvcApplication()
-        {
-            logger = LogManager.GetCurrentClassLogger();
-        }
         protected void Application_Start()
         {
 
             var builder = new ContainerBuilder();
 
             builder.RegisterControllers(typeof(HomeController).Assembly);
-            builder.Register(f => LogManager.GetLogger("ForControllers")).
+            builder.Register(f => new Logger()).
                 As<ILogger>();
 
             DependencyResolver.SetResolver(
                 new AutofacDependencyResolver(builder.Build()));
-
-            logger.Info("Application started");
 
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
-            //using (var counterHelper = PerformanceHelper.CreateCounterHelper<Counters>("Test project"))
-            //{
-            //    counterHelper.RawValue(Counters.LogIn, 0);
-            //    counterHelper.RawValue(Counters.LogOff, 0);
-            //    counterHelper.RawValue(Counters.FailedLogIn, 0);
-
-            //}
+            using (var counterHelper = PerformanceHelper.CreateCounterHelper<Counters>("Test project"))
+            {
+                counterHelper.RawValue(Counters.LogIn, 0);
+                counterHelper.RawValue(Counters.LogOff, 0);
+                counterHelper.RawValue(Counters.FailedLogIn, 0);
+            }
+        }
+        protected void Application_Error(object sender, EventArgs e)
+        {
+            Exception exception = Server.GetLastError();
+            ILogger logger = DependencyResolver.Current.GetService(typeof(ILogger)) as ILogger;
+            logger?.Error(exception.Message, exception);
         }
     }
 }
